@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Threading;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FileDrip
 {
@@ -11,18 +8,45 @@ namespace FileDrip
     {
         static void Main(string[] args)
         {
-            string pattern = args != null && args.Length > 2 ? args[2] : "*.*";
-
-            if (args != null && args.Length < 2)
+            if (args.Length < 2)
             {
-                Console.WriteLine("please provide source and target directories");
+                Console.WriteLine("USAGE: FileDrip <source folder> <destination folder> [delay in seconds, default = 1]");
                 return;
             }
 
             var source = new DirectoryInfo(args[0]);
-            var destination = new DirectoryInfo(args[1]);
+            if (!Directory.Exists(source.FullName))
+            {
+                Console.WriteLine("ERROR: source directory does not exist: {0}", source.FullName);
+                return;
+            }
 
-            var files = Directory.GetFiles(source.FullName, pattern);
+            var destination = new DirectoryInfo(args[1]);
+            if (!Directory.Exists(destination.FullName))
+            {
+                Console.WriteLine("ERROR: destination directory does not exist: {0}", destination.FullName);
+                return;
+            }
+
+            if (source.FullName == destination.FullName)
+            {
+                Console.WriteLine("ERROR: source and destination directories must be different");
+                return;
+            }
+
+            int delay = 1;
+            if (args.Length > 2)
+            {
+                bool test = int.TryParse(args[2], out delay);
+
+                if (test == false)
+                {
+                    Console.WriteLine("ERROR: delay option should be a valid whole number");
+                    return;
+                }
+            }
+
+            var files = Directory.GetFiles(source.FullName);
 
             foreach (var f in files)
             {
@@ -36,11 +60,11 @@ namespace FileDrip
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("FAILED!");
+                    Console.WriteLine("FAILED: {0}", e.ToString());
                 }
                 finally
                 {
-                    System.Threading.Thread.Sleep(1000);
+                    Thread.Sleep(delay * 1000);
                 }
             }
         }
